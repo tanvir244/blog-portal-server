@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -8,6 +9,8 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+console.log(process.env.DB_USER)
+console.log(process.env.DB_PASS)
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.9nu6wnq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -22,6 +25,46 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
+
+    const recentCollection = client.db('blogPortal').collection('recentBlogs');
+    const addedCollection = client.db('blogPortal').collection('addedBlogs');
+
+    app.get('/recent_blogs', async(req, res) => {
+        const cursor = recentCollection.find();
+        const result = await cursor.toArray();
+        res.send(result);
+    })
+
+    app.get('/recent_blogs/:id', async(req, res) => {
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)};
+        // if I need specific properties value than only I need to emplement options otherwise don't need. if I don't implement options, all properties value show by defaultly
+        const options = {
+            projection: {title: 1, short_description: 1, detail_description: 1, category: 1, image_url: 1}
+        }
+        const result = await recentCollection.findOne(query, options);
+        res.send(result);
+    })
+
+    app.post('/add_blog', async(req, res) => {
+      const newBlog = req.body;
+      const result = await addedCollection.insertOne(newBlog);
+      res.send(result);
+    })
+
+    app.get('/add_blog', async(req, res) => {
+      const cursor = addedCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    app.get('/add_blog/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const result = await addedCollection.findOne(query);
+      res.send(result);
+    })
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
