@@ -80,6 +80,25 @@ async function run() {
       res.send(result);
     })
 
+    app.put('/add_blog/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedData = req.body;
+      const data = {
+        $set: {
+          title: updatedData.title,
+          image: updatedData.image,
+          category: updatedData.category,
+          short_description: updatedData.short_description,
+          long_description: updatedData.long_description,
+          email: updatedData.email
+        }
+      }
+      const result = await addedCollection.updateOne(filter, data, options);
+      res.send(result);
+    })
+
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     // Send a ping to confirm a successful connection
