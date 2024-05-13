@@ -26,6 +26,7 @@ async function run() {
     const recentCollection = client.db('blogPortal').collection('recentBlogs');
     const addedCollection = client.db('blogPortal').collection('addedBlogs');
     const commentCollection = client.db('blogPortal').collection('allComments');
+    const wishlistCollection = client.db('blogPortal').collection('allWishlist');
 
     app.get('/recent_blogs', async(req, res) => {
         const cursor = recentCollection.find();
@@ -96,6 +97,30 @@ async function run() {
         }
       }
       const result = await addedCollection.updateOne(filter, data, options);
+      res.send(result);
+    })
+
+    app.post('/wishlists', async(req, res) => {
+      const newWishItem = req.body;
+      const result = await wishlistCollection.insertOne(newWishItem);
+      res.send(result);
+    })
+
+    app.get('/wishlists', async(req, res) => {
+      const cursor = wishlistCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    app.get('/wishlists/:email', async(req, res) => {
+      const result = await wishlistCollection.find({whoAddedWishlist: req.params.email}).toArray();
+      res.send(result);
+    })
+
+    app.delete('/wishlists/:email/:id', async (req, res) => {
+      const { email, id } = req.params; // Extract id and email from request parameters
+      const query = { _id: new ObjectId(id), whoAddedWishlist: email }; // Construct query
+      const result = await wishlistCollection.deleteOne(query); // Use wishlistCollection instead of craftCollection
       res.send(result);
     })
 
