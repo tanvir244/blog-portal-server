@@ -10,7 +10,6 @@ const port = process.env.PORT || 5000;
 // middleware 
 app.use(cors({
   origin: [
-    'http://localhost:5173',
     'https://blog-portal-auth.web.app',
     'https://blog-portal-auth.firebaseapp.com'
   ],
@@ -178,9 +177,9 @@ async function run() {
     })
 
     app.delete('/wishlists/:email/:id', async (req, res) => {
-      const { email, id } = req.params; // Extract id and email from request parameters
-      const query = { _id: new ObjectId(id), whoAddedWishlist: email }; // Construct query
-      const result = await wishlistCollection.deleteOne(query); // Use wishlistCollection instead of craftCollection
+      const { email, id } = req.params; 
+      const query = { _id: new ObjectId(id), whoAddedWishlist: email }; 
+      const result = await wishlistCollection.deleteOne(query);
       res.send(result);
     })
 
