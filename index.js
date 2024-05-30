@@ -10,6 +10,7 @@ const port = process.env.PORT || 5000;
 // middleware 
 app.use(cors({
   origin: [
+    'http://localhost:5173',
     'https://blog-portal-auth.web.app',
     'https://blog-portal-auth.firebaseapp.com'
   ],
@@ -38,12 +39,12 @@ const logger = (req, res, next) => {
 const verifyToken = (req, res, next) => {
   const token = req?.cookies?.token;
   // console.log('token in the middleware', token);
-  if(!token){
-    return res.status(401).send({message: 'unauthorized access'});
+  if (!token) {
+    return res.status(401).send({ message: 'unauthorized access' });
   }
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if(err){
-      return res.status(401).send({message: 'unauthorized access'})
+    if (err) {
+      return res.status(401).send({ message: 'unauthorized access' })
     }
     req.user = decoded;
     next();
@@ -67,18 +68,18 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
 
       res
-      .cookie('token', token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none'
-      })
-      .send({ success: true });
+        .cookie('token', token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        })
+        .send({ success: true });
     })
 
     app.post('/logout', (req, res) => {
       const user = req.body;
       console.log('logging out', user);
-      res.clearCookie('token', {maxAge: 0}).send({success: true})
+      res.clearCookie('token', { maxAge: 0 }).send({ success: true })
     })
 
     // blogs related api
@@ -115,6 +116,12 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await addedCollection.findOne(query);
+      res.send(result);
+    })
+
+    app.get('/my_added_blogs/:email', async (req, res) => {
+      // const email = req.params.email;
+      const result = await addedCollection.find({ email: req.params.email }).toArray();
       res.send(result);
     })
 
@@ -169,21 +176,26 @@ async function run() {
     app.get('/wishlists/:email', logger, verifyToken, async (req, res) => {
       // console.log('token owner info:', req.user.email);
       // console.log('user email:', req.params.email);
-      if(req.user.email !== req.params.email){
-        return res.status(403).send({message: 'forbidden access'})
+      if (req.user.email !== req.params.email) {
+        return res.status(403).send({ message: 'forbidden access' })
       }
       const result = await wishlistCollection.find({ whoAddedWishlist: req.params.email }).toArray();
       res.send(result);
     })
 
+    app.get('/my_wishlist/:email', async (req, res) => {
+      const result = await wishlistCollection.find({ whoAddedWishlist: req.params.email }).toArray();
+      res.send(result);
+    })
+
     app.delete('/wishlists/:email/:id', async (req, res) => {
-      const { email, id } = req.params; 
-      const query = { _id: new ObjectId(id), whoAddedWishlist: email }; 
+      const { email, id } = req.params;
+      const query = { _id: new ObjectId(id), whoAddedWishlist: email };
       const result = await wishlistCollection.deleteOne(query);
       res.send(result);
     })
 
-    app.get('/authors', async(req, res) => {
+    app.get('/authors', async (req, res) => {
       const cursor = authorsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
